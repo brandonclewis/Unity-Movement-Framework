@@ -4,12 +4,14 @@ using UnityEngine;
 
 public class FollowCamera : MonoBehaviour
 {
-    public static int sensitivity = 2;
+    public static int sensitivity;
+    public int s = 2;
     GameObject player;
 
     // Start is called before the first frame update
     void Start()
     {
+        sensitivity = s;
         player = GameObject.Find("Player");
     }
 
