@@ -5,7 +5,7 @@ using UnityEngine;
 public class FollowCamera : MonoBehaviour
 {
     public static int sensitivity;
-    public int s = 2;
+    public int s = 3;
     GameObject player;
 
     // Start is called before the first frame update
