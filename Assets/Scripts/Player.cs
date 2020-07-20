@@ -15,7 +15,10 @@ public class Player : MonoBehaviour
     public float airSpeedCap = 0.5715f;
     public float groundAccelMult = 10f;
     public float airAccelMult = 10f;
-
+    public float brakingDecel = 1.905f;
+    public float friction = 1f;
+    public float brakingFrictionFactor = 1f;
+    
     float velocityVertical;
 
     CharacterController controller;
@@ -53,7 +56,29 @@ public class Player : MonoBehaviour
         Vector3 newVel = velocity;
         Vector3 inputDirection = (transform.forward * Input.GetAxisRaw("Vertical") +
                                   transform.right * Input.GetAxisRaw("Horizontal")).normalized;
-        
+
+        if (controller.isGrounded)
+        {
+            float speed = velocity.magnitude;
+
+            float frictionFactor = Mathf.Max(0f, brakingFrictionFactor);
+            friction = Mathf.Max(0f, friction * frictionFactor);
+            brakingDecel = Mathf.Max(brakingDecel, speed);
+            brakingDecel = Mathf.Max(0, brakingDecel);
+            
+            bool zeroFriction = Mathf.Approximately(0, friction);
+            bool zeroBraking = brakingDecel == 0f;
+
+            if (!(zeroFriction || zeroBraking))
+            {
+                Vector3 reverseAccel = friction * brakingDecel * velocity.normalized;
+                newVel -= reverseAccel * Time.deltaTime;
+                if (Vector3.Dot(newVel, velocity) <= 0f)
+                {
+                    newVel = Vector3.zero;
+                }
+            }
+        }
         
         
         Vector3 acceleration = inputDirection * maxAcceleration;
