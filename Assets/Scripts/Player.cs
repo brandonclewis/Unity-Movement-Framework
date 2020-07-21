@@ -21,6 +21,7 @@ public class Player : MonoBehaviour
     public float maxWalkSpeedCrouched = 1.2065f;
     public float sprintSpeed = 6.096f;
     public float walkSpeed = 2.8575f;
+    public float jumpVelocity = 3.048f;
     
     float velocityVertical;
     private bool isSprinting = false;
@@ -44,14 +45,15 @@ public class Player : MonoBehaviour
         else
             velocityVertical = terminalVelocity;
 
-        //Vector3 velocity = transform.forward * Input.GetAxisRaw("Vertical") + transform.right * Input.GetAxisRaw("Horizontal");
-        //velocity = velocity.normalized * maxSpeed + Vector3.up * velocityVertical;
+        if (controller.isGrounded && Input.GetAxisRaw("Jump") != 0f)
+            velocityVertical += jumpVelocity;
+        
         Vector3 velocity = VelocityHorizontal() + Vector3.up * velocityVertical;
 
         controller.Move(velocity * Time.deltaTime);
         if(controller.isGrounded)
             velocityVertical = 0;
-        transform.Rotate(FollowCamera.sensitivity * Input.GetAxis("Mouse X") * Vector3.up,Space.Self);
+        transform.Rotate(FollowCamera.sensitivity * Input.GetAxisRaw("Mouse X") * Vector3.up,Space.Self);
         
         print(controller.velocity.magnitude);
     }
@@ -91,7 +93,7 @@ public class Player : MonoBehaviour
 
         if (speed <= 0.1f)
             return newVel;
-            
+
         float frictionFactor = Mathf.Max(0f, brakingFrictionFactor);
         friction = Mathf.Max(0f, friction * frictionFactor);
         brakingDecel = Mathf.Max(brakingDecel, speed);

@@ -60,6 +60,7 @@
   <ItemGroup>
      <Compile Include="Assets\Scripts\FollowCamera.cs" />
      <Compile Include="Assets\Scripts\Player.cs" />
+     <None Include="Assets\Shaders\WorldOffetShader.shader" />
  <Reference Include="Unity.Timeline.Editor">
  <HintPath>D:/Unity Projects/Movement/Library/ScriptAssemblies/Unity.Timeline.Editor.dll</HintPath>
  </Reference>

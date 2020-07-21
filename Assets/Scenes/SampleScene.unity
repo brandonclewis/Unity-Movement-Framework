@@ -440,7 +440,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: e9dec72c09162894db650c46c7e913e5, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -513,9 +513,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dde2c42e862654d46adf26da6c566450, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 10
   gravity: -9.81
   terminalVelocity: -53
+  maxAcceleration: 8.5725
+  airSpeedCap: 0.5715
+  groundAccelMult: 10
+  airAccelMult: 10
+  brakingDecel: 1.905
+  friction: 1
+  brakingFrictionFactor: 1
+  maxWalkSpeedCrouched: 1.2065
+  sprintSpeed: 6.096
+  walkSpeed: 2.8575
+  jumpVelocity: 3.048
 --- !u!4 &1887524359
 Transform:
   m_ObjectHideFlags: 0

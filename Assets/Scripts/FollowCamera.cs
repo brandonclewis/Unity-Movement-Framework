@@ -18,6 +18,6 @@ public class FollowCamera : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        transform.RotateAround(player.transform.position,player.transform.right,-1 * sensitivity * Input.GetAxis("Mouse Y"));
+        transform.RotateAround(player.transform.position,player.transform.right,-1 * sensitivity * Input.GetAxisRaw("Mouse Y"));
     }
 }
