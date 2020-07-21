@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Security.Cryptography;
@@ -7,8 +8,7 @@ using Vector3 = UnityEngine.Vector3;
 
 public class Player : MonoBehaviour
 {
-
-    public float maxSpeed = 6f;
+    
     public float gravity = -9.81f;
     public float terminalVelocity = -53f;
     public float maxAcceleration = 8.5725f;
@@ -18,8 +18,14 @@ public class Player : MonoBehaviour
     public float brakingDecel = 1.905f;
     public float friction = 1f;
     public float brakingFrictionFactor = 1f;
+    public float maxWalkSpeedCrouched = 1.2065f;
+    public float sprintSpeed = 6.096f;
+    public float walkSpeed = 2.8575f;
     
     float velocityVertical;
+    private bool isSprinting = false;
+    private bool isWalking = true;
+    private bool isCrouching = false;
 
     CharacterController controller;
 
@@ -58,31 +64,10 @@ public class Player : MonoBehaviour
                                   transform.right * Input.GetAxisRaw("Horizontal")).normalized;
 
         if (controller.isGrounded)
-        {
-            float speed = velocity.magnitude;
-
-            float frictionFactor = Mathf.Max(0f, brakingFrictionFactor);
-            friction = Mathf.Max(0f, friction * frictionFactor);
-            brakingDecel = Mathf.Max(brakingDecel, speed);
-            brakingDecel = Mathf.Max(0, brakingDecel);
-            
-            bool zeroFriction = Mathf.Approximately(0, friction);
-            bool zeroBraking = brakingDecel == 0f;
-
-            if (!(zeroFriction || zeroBraking))
-            {
-                Vector3 reverseAccel = friction * brakingDecel * velocity.normalized;
-                newVel -= reverseAccel * Time.deltaTime;
-                if (Vector3.Dot(newVel, velocity) <= 0f)
-                {
-                    newVel = Vector3.zero;
-                }
-            }
-        }
-        
+            newVel = VelocityBraked(newVel);
         
         Vector3 acceleration = inputDirection * maxAcceleration;
-        acceleration = Vector3.ClampMagnitude(acceleration, maxSpeed);
+        acceleration = Vector3.ClampMagnitude(acceleration, GetMaxSpeed());
         Vector3 accelDir = acceleration.normalized;
         float veer = velocity.x * accelDir.x + velocity.z * accelDir.z;
         float addSpeed = (controller.isGrounded ? acceleration : Vector3.ClampMagnitude(acceleration, airSpeedCap))
@@ -97,5 +82,54 @@ public class Player : MonoBehaviour
         }
 
         return newVel;
+    }
+
+    Vector3 VelocityBraked(Vector3 vel)
+    {
+        Vector3 newVel = vel;
+        float speed = vel.magnitude;
+
+        if (speed <= 0.1f)
+            return newVel;
+            
+        float frictionFactor = Mathf.Max(0f, brakingFrictionFactor);
+        friction = Mathf.Max(0f, friction * frictionFactor);
+        brakingDecel = Mathf.Max(brakingDecel, speed);
+        brakingDecel = Mathf.Max(0, brakingDecel);
+        bool zeroFriction = Mathf.Approximately(0, friction);
+        bool zeroBraking = brakingDecel == 0f;
+
+        if (zeroFriction || zeroBraking)
+            return newVel;
+        
+        Vector3 reverseAccel = friction * brakingDecel * vel.normalized;
+        newVel -= reverseAccel * Time.deltaTime;
+
+        if (Vector3.Dot(newVel, vel) <= 0f)
+            return Vector3.zero;
+
+        if (Mathf.Pow(newVel.magnitude, 2) <= 0.00001)
+            return Vector3.zero;
+
+        return newVel;
+    }
+
+    float GetMaxSpeed()
+    {
+        if (isWalking)
+        {
+            if (isSprinting)
+            {
+                if (isCrouching)
+                    return maxWalkSpeedCrouched * 1.7f;
+                return sprintSpeed;
+            }
+
+            if (isCrouching)
+                return maxWalkSpeedCrouched;
+            return walkSpeed;
+        }
+
+        return 0;
     }
 }
