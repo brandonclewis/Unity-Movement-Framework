@@ -53,7 +53,7 @@ public class Player : MonoBehaviour
         controller.Move(velocity * Time.deltaTime);
         if(controller.isGrounded)
             velocityVertical = 0;
-        transform.Rotate(FollowCamera.sensitivity * Input.GetAxisRaw("Mouse X") * Vector3.up,Space.Self);
+        transform.Rotate(CameraController.sensitivity * Input.GetAxisRaw("Mouse X") * Vector3.up,Space.Self);
         
         print(controller.velocity.magnitude);
     }
