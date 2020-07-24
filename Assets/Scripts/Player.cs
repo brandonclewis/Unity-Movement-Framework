@@ -3,14 +3,15 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Security.Cryptography;
+using System.Transactions;
 using UnityEngine;
 using Vector3 = UnityEngine.Vector3;
 
 public class Player : MonoBehaviour
 {
     
-    public float gravity = -9.81f;
-    public float terminalVelocity = -53f;
+    public float gravity = -9.81f; //constant acceleration downwards
+    public float terminalVelocity = -53f; //maximum fall speed
     public float maxAcceleration = 8.5725f;
     public float airSpeedCap = 0.5715f;
     public float groundAccelMult = 10f;
@@ -19,14 +20,16 @@ public class Player : MonoBehaviour
     public float friction = 1f;
     public float brakingFrictionFactor = 1f;
     public float maxWalkSpeedCrouched = 1.2065f;
-    public float sprintSpeed = 6.096f;
-    public float walkSpeed = 2.8575f;
-    public float jumpVelocity = 3.048f;
-    
+    public float sprintSpeed = 6.096f; //sprint speed cap w/o strafing
+    public float walkSpeed = 2.8575f; //walk speed cap w/o strafing
+    public float jumpVelocity = 3.048f; //initial upwards velocity added on jump
+
     float velocityVertical;
     private bool isSprinting = false;
     private bool isWalking = true;
     private bool isCrouching = false;
+
+    private ControllerColliderHit ground;
 
     CharacterController controller;
 
@@ -36,7 +39,7 @@ public class Player : MonoBehaviour
         controller = GetComponent<CharacterController>();
         velocityVertical = 0;
     }
-
+    
     // Update is called once per frame
     void Update()
     {
@@ -46,19 +49,21 @@ public class Player : MonoBehaviour
         isSprinting = Input.GetKey(KeyCode.LeftShift);
         isCrouching = Input.GetKey(KeyCode.LeftControl);
         
-        if (controller.isGrounded && Input.GetAxisRaw("Jump") != 0f)
+        if (controller.isGrounded && ground == null && Input.GetAxisRaw("Jump") != 0f)
             velocityVertical += jumpVelocity;
-        
-        Vector3 velocity = VelocityHorizontal() + Vector3.up * velocityVertical;
 
-        controller.Move(velocity * Time.deltaTime);
-        if(controller.isGrounded)
+        Vector3 velocitySum = VelocityHorizontal() + Vector3.up * velocityVertical;
+
+        if(ground != null)
+            velocitySum = Vector3.ProjectOnPlane(velocitySum, ground.normal).normalized * velocitySum.magnitude;
+
+        controller.Move(velocitySum * Time.deltaTime);
+        if(controller.isGrounded && ground == null)
             velocityVertical = 0;
         transform.Rotate(CameraController.sensitivity * Input.GetAxisRaw("Mouse X") * Vector3.up,Space.Self);
         
         print(controller.velocity.magnitude);
     }
-
     Vector3 VelocityHorizontal()
     {
         Vector3 velocity = new Vector3(controller.velocity.x, 0, controller.velocity.z);
@@ -134,5 +139,14 @@ public class Player : MonoBehaviour
         }
 
         return 0;
+    }
+    
+    private void OnControllerColliderHit(ControllerColliderHit hit)
+    {
+        if (Vector3.Angle(Vector3.up, hit.normal) >= controller.slopeLimit)
+            ground = hit;
+        else
+            ground = null;
+        
     }
 }
