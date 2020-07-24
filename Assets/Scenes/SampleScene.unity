@@ -589,8 +589,8 @@ MonoBehaviour:
   airSpeedCap: 0.5715
   groundAccelMult: 10
   airAccelMult: 10
-  brakingDecel: 1.905
-  friction: 1
+  brakingDecelStock: 1.905
+  friction: 4
   brakingFrictionFactor: 1
   maxWalkSpeedCrouched: 1.2065
   sprintSpeed: 6.096
@@ -604,7 +604,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1887524357}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -8.26, y: 21.29, z: 0}
+  m_LocalPosition: {x: -8, y: 21.29, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 963194228}

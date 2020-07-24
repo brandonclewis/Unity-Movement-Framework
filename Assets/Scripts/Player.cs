@@ -16,8 +16,8 @@ public class Player : MonoBehaviour
     public float airSpeedCap = 0.5715f;
     public float groundAccelMult = 10f;
     public float airAccelMult = 10f;
-    public float brakingDecel = 1.905f;
-    public float friction = 1f;
+    public float brakingDecelStock = 1.905f;
+    public float friction = 4f;
     public float brakingFrictionFactor = 1f;
     public float maxWalkSpeedCrouched = 1.2065f;
     public float sprintSpeed = 6.096f; //sprint speed cap w/o strafing
@@ -62,7 +62,7 @@ public class Player : MonoBehaviour
             velocityVertical = 0;
         transform.Rotate(CameraController.sensitivity * Input.GetAxisRaw("Mouse X") * Vector3.up,Space.Self);
         
-        print(controller.velocity.magnitude);
+        print(isCrouching + " " + controller.velocity.magnitude);
     }
     Vector3 VelocityHorizontal()
     {
@@ -94,6 +94,7 @@ public class Player : MonoBehaviour
 
     Vector3 VelocityBraked(Vector3 vel)
     {
+        float brakingDecel = brakingDecelStock;
         Vector3 newVel = vel;
         float speed = vel.magnitude;
 
