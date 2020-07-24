@@ -40,11 +40,12 @@ public class Player : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (velocityVertical >= terminalVelocity)
-            velocityVertical += (Time.deltaTime * gravity);
-        else
-            velocityVertical = terminalVelocity;
+        velocityVertical += Time.deltaTime * gravity;
+        velocityVertical = Mathf.Clamp(velocityVertical, terminalVelocity, float.MaxValue);
 
+        isSprinting = Input.GetKey(KeyCode.LeftShift);
+        isCrouching = Input.GetKey(KeyCode.LeftControl);
+        
         if (controller.isGrounded && Input.GetAxisRaw("Jump") != 0f)
             velocityVertical += jumpVelocity;
         
