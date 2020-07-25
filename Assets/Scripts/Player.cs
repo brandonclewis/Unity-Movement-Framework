@@ -25,13 +25,18 @@ public class Player : MonoBehaviour
     public float jumpVelocity = 3.048f; //initial upwards velocity added on jump
 
     float velocityVertical;
-    private bool isSprinting = false;
+    private bool isSprinting;
     private bool isWalking = true;
-    private bool isCrouching = false;
-
-    private ControllerColliderHit ground;
-
+    private bool isCrouching;
+    private bool isGrounded;
+    private bool groundTooSloped;
+    
     CharacterController controller;
+    private ControllerColliderHit ground;
+    
+    private Vector3 velocitySum;
+    private Vector3 velH;
+    private Vector3 velHProj;
 
     // Start is called before the first frame update
     void Start()
@@ -39,56 +44,80 @@ public class Player : MonoBehaviour
         controller = GetComponent<CharacterController>();
         velocityVertical = 0;
     }
-    
+
     // Update is called once per frame
     void Update()
     {
+        //Detect ground collision
+        RaycastHit ground = GetGroundHit();
+        
+        //Add gravity acceleration and clamp fall speed to the terminal velocity
         velocityVertical += Time.deltaTime * gravity;
         velocityVertical = Mathf.Clamp(velocityVertical, terminalVelocity, float.MaxValue);
 
+        //Sprint and crouch logic
         isSprinting = Input.GetKey(KeyCode.LeftShift);
         isCrouching = Input.GetKey(KeyCode.LeftControl);
+
+        //Jump code
+        if (isGrounded && !groundTooSloped && Input.GetAxisRaw("Jump") != 0f)
+        {
+            
+            velocityVertical = jumpVelocity;
+            isGrounded = false;
+        }
+
+        velH = VelocityHorizontal();
+
+        //Combine vertical and horizontal velocity
+        if (!groundTooSloped && !ground.Equals(default(RaycastHit)))
+        {
+            velocityVertical -= gravity * Time.deltaTime;
+            velHProj = Vector3.ProjectOnPlane(velH, ground.normal).normalized * velH.magnitude;
+            velocitySum = velHProj + Vector3.up * velocityVertical;
+        } else
+            velocitySum = velH + Vector3.up * velocityVertical;
         
-        if (controller.isGrounded && ground == null && Input.GetAxisRaw("Jump") != 0f)
-            velocityVertical += jumpVelocity;
+        //On ground sharper than the slope limit, project entire velocity onto surface normal
+        if(groundTooSloped)
+            velocitySum = Vector3.ProjectOnPlane(velocitySum, ground.normal);
 
-        Vector3 velocitySum = VelocityHorizontal() + Vector3.up * velocityVertical;
-
-        if(ground != null)
-            velocitySum = Vector3.ProjectOnPlane(velocitySum, ground.normal).normalized * velocitySum.magnitude;
-
+        //Move and rotate the player
         controller.Move(velocitySum * Time.deltaTime);
-        if(controller.isGrounded && ground == null)
-            velocityVertical = 0;
         transform.Rotate(CameraController.sensitivity * Input.GetAxisRaw("Mouse X") * Vector3.up,Space.Self);
         
-        print(isCrouching + " " + controller.velocity.magnitude);
+        //After movement reset vertical velocity if player is grounded
+        if(isGrounded && !groundTooSloped)
+            velocityVertical = 0;
+        
+        print(velH.magnitude + "," + velocityVertical + "," + controller.velocity.magnitude);
     }
+
     Vector3 VelocityHorizontal()
     {
-        Vector3 velocity = new Vector3(controller.velocity.x, 0, controller.velocity.z);
+        Vector3 velocity = new Vector3(velH.x, 0, velH.z);
         Vector3 newVel = velocity;
         Vector3 inputDirection = (transform.forward * Input.GetAxisRaw("Vertical") +
                                   transform.right * Input.GetAxisRaw("Horizontal")).normalized;
 
-        if (controller.isGrounded)
+        if (isGrounded)
             newVel = VelocityBraked(newVel);
         
         Vector3 acceleration = inputDirection * maxAcceleration;
         acceleration = Vector3.ClampMagnitude(acceleration, GetMaxSpeed());
         Vector3 accelDir = acceleration.normalized;
         float veer = velocity.x * accelDir.x + velocity.z * accelDir.z;
-        float addSpeed = (controller.isGrounded ? acceleration : Vector3.ClampMagnitude(acceleration, airSpeedCap))
+        float addSpeed = (isGrounded ? acceleration : Vector3.ClampMagnitude(acceleration, airSpeedCap))
             .magnitude - veer;
 
         if (addSpeed > 0f)
         {
-            float accelMult = controller.isGrounded ? groundAccelMult : airAccelMult;
+            float accelMult = isGrounded ? groundAccelMult : airAccelMult;
             acceleration *= accelMult * Time.deltaTime;
             acceleration = Vector3.ClampMagnitude(acceleration, addSpeed);
             newVel += acceleration;
         }
-
+        
         return newVel;
     }
 
@@ -141,13 +170,26 @@ public class Player : MonoBehaviour
 
         return 0;
     }
-    
-    private void OnControllerColliderHit(ControllerColliderHit hit)
+
+    RaycastHit GetGroundHit()
     {
-        if (Vector3.Angle(Vector3.up, hit.normal) >= controller.slopeLimit)
-            ground = hit;
+        RaycastHit hitInfo;
+        if (Physics.SphereCast(transform.position, controller.radius + controller.skinWidth, Vector3.down, out hitInfo,
+            controller.height / 2 - controller.radius))
+        {
+            isGrounded = true;
+            if (Vector3.Angle(Vector3.up, hitInfo.normal) >= controller.slopeLimit)
+                groundTooSloped = true;
+            else
+                groundTooSloped = false;
+        }
         else
-            ground = null;
+        {
+            isGrounded = false;
+            groundTooSloped = false;
+            hitInfo = default(RaycastHit);
+        }
+        return hitInfo;
         
     }
 }
