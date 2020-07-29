@@ -10,33 +10,33 @@ using Vector3 = UnityEngine.Vector3;
 public class Player : MonoBehaviour
 {
     
-    public float gravity = -9.81f; //constant acceleration downwards
-    public float terminalVelocity = -53f; //maximum fall speed
-    public float maxAcceleration = 8.5725f;
-    public float airSpeedCap = 0.5715f;
-    public float groundAccelMult = 10f;
-    public float airAccelMult = 10f;
-    public float brakingDecelStock = 1.905f;
-    public float friction = 4f;
-    public float brakingFrictionFactor = 1f;
-    public float maxWalkSpeedCrouched = 1.2065f;
-    public float sprintSpeed = 6.096f; //sprint speed cap w/o strafing
-    public float walkSpeed = 2.8575f; //walk speed cap w/o strafing
-    public float jumpVelocity = 3.048f; //initial upwards velocity added on jump
-
-    float velocityVertical;
+    public float gravity = -9.81f; // Constant acceleration downwards
+    public float terminalVelocity = -53f; // Maximum fall speed
+    public float maxAcceleration = 8.5725f; // Maximum acceleration
+    public float airSpeedCap = 0.5715f; // Maximum value for add speed
+    public float groundAccelMult = 10f; // Grounded acceleration multiplier
+    public float airAccelMult = 10f; // Aerial acceleration multiplier
+    public float brakingDecelStock = 1.905f; // Default value for braking
+    public float friction = 4f; // Ground and aerial friction
+    public float brakingFrictionFactor = 1f; // Friction multiplier
+    public float maxWalkSpeedCrouched = 1.2065f; // Crouch walk speed cap
+    public float sprintSpeed = 6.096f; // Sprint speed cap w/o strafing
+    public float walkSpeed = 2.8575f; // Walk speed cap w/o strafing
+    public float jumpVelocity = 3.048f; // Initial upwards velocity added on jump
+    
     private bool isSprinting;
     private bool isWalking = true;
     private bool isCrouching;
     private bool isGrounded;
     private bool groundTooSloped;
     
-    CharacterController controller;
-    private ControllerColliderHit ground;
-    
-    private Vector3 velocitySum;
+    private CharacterController controller;
+    private RaycastHit ground;
+
+    private float velocityVertical;
     private Vector3 velH;
     private Vector3 velHProj;
+    private Vector3 velocitySum;
 
     // Start is called before the first frame update
     void Start()
@@ -48,28 +48,29 @@ public class Player : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        //Detect ground collision
-        RaycastHit ground = GetGroundHit();
+        // Detect ground collision
+        ground = GetGroundHit();
         
-        //Add gravity acceleration and clamp fall speed to the terminal velocity
+        // Add gravity acceleration and clamp fall speed to the terminal velocity
         velocityVertical += Time.deltaTime * gravity;
         velocityVertical = Mathf.Clamp(velocityVertical, terminalVelocity, float.MaxValue);
 
-        //Sprint and crouch logic
+        // Sprint and crouch logic
         isSprinting = Input.GetKey(KeyCode.LeftShift);
         isCrouching = Input.GetKey(KeyCode.LeftControl);
 
-        //Jump code
+        // Jump code
         if (isGrounded && !groundTooSloped && Input.GetAxisRaw("Jump") != 0f)
         {
             
             velocityVertical = jumpVelocity;
             isGrounded = false;
         }
-
+        
+        // Set horizontal velocity
         velH = VelocityHorizontal();
 
-        //Combine vertical and horizontal velocity
+        // Combine vertical and horizontal velocity
         if (!groundTooSloped && !ground.Equals(default(RaycastHit)))
         {
             velocityVertical -= gravity * Time.deltaTime;
@@ -78,38 +79,43 @@ public class Player : MonoBehaviour
         } else
             velocitySum = velH + Vector3.up * velocityVertical;
         
-        //On ground sharper than the slope limit, project entire velocity onto surface normal
+        // On ground sharper than the slope limit, project entire velocity onto surface normal
         if(groundTooSloped)
             velocitySum = Vector3.ProjectOnPlane(velocitySum, ground.normal);
 
-        //Move and rotate the player
+        // Move and rotate the player
         controller.Move(velocitySum * Time.deltaTime);
         transform.Rotate(CameraController.sensitivity * Input.GetAxisRaw("Mouse X") * Vector3.up,Space.Self);
         
-        //After movement reset vertical velocity if player is grounded
+        // After movement reset vertical velocity if player is grounded
         if(isGrounded && !groundTooSloped)
             velocityVertical = 0;
-        
-        print(velH.magnitude + "," + velocityVertical + "," + controller.velocity.magnitude);
     }
 
+    // Returns the horizontal velocity based on player input
     Vector3 VelocityHorizontal()
     {
+        // Take in player input and current velocity
         Vector3 velocity = new Vector3(velH.x, 0, velH.z);
         Vector3 newVel = velocity;
         Vector3 inputDirection = (transform.forward * Input.GetAxisRaw("Vertical") +
                                   transform.right * Input.GetAxisRaw("Horizontal")).normalized;
-
+        
+        // Apply friction
         if (isGrounded)
             newVel = VelocityBraked(newVel);
         
+        // Apply friction and find direction of acceleration
         Vector3 acceleration = inputDirection * maxAcceleration;
         acceleration = Vector3.ClampMagnitude(acceleration, GetMaxSpeed());
         Vector3 accelDir = acceleration.normalized;
+        
+        // Calculate veer and the speed added
         float veer = velocity.x * accelDir.x + velocity.z * accelDir.z;
         float addSpeed = (isGrounded ? acceleration : Vector3.ClampMagnitude(acceleration, airSpeedCap))
             .magnitude - veer;
 
+        // Add new speed to velocity
         if (addSpeed > 0f)
         {
             float accelMult = isGrounded ? groundAccelMult : airAccelMult;
@@ -118,9 +124,11 @@ public class Player : MonoBehaviour
             newVel += acceleration;
         }
         
+        // Return the final velocity 
         return newVel;
     }
 
+    // Returns a given velocity with friction applied
     Vector3 VelocityBraked(Vector3 vel)
     {
         float brakingDecel = brakingDecelStock;
@@ -152,6 +160,7 @@ public class Player : MonoBehaviour
         return newVel;
     }
 
+    // Returns the maximum allowed speed based on player state
     float GetMaxSpeed()
     {
         if (isWalking)
@@ -171,6 +180,7 @@ public class Player : MonoBehaviour
         return 0;
     }
 
+    // Returns the ground based on spherecast
     RaycastHit GetGroundHit()
     {
         RaycastHit hitInfo;
@@ -189,7 +199,7 @@ public class Player : MonoBehaviour
             groundTooSloped = false;
             hitInfo = default(RaycastHit);
         }
+
         return hitInfo;
-        
     }
 }
