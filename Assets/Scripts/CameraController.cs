@@ -26,6 +26,6 @@ public class CameraController : MonoBehaviour
             firstPerson.enabled = !firstPerson.enabled;
         }
         thirdPerson.transform.RotateAround(player.transform.position,player.transform.right,-1 * sensitivity * Input.GetAxisRaw("Mouse Y"));
-        firstPerson.transform.RotateAround(player.transform.position,player.transform.right,-1 * sensitivity * Input.GetAxisRaw("Mouse Y"));
+        firstPerson.transform.RotateAround(firstPerson.transform.position,firstPerson.transform.right,-1 * sensitivity * Input.GetAxisRaw("Mouse Y"));
     }
 }
