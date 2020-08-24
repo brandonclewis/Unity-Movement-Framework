@@ -1,22 +1,12 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class InventoryController : MonoBehaviour
 {
-    public enum WeaponType
-    {
-        Pistol = 0,
-        GrapplingHook = 1,
-        LightningGun = 2,
-        RocketLauncher = 3,
-        GravityGun = 4,
-        PhysicsGun = 5,
-        MagmaGun = 6,
-        MachineGun = 7,
-        Laser = 8,
-    }
+    public GameObject[] WeaponType = new GameObject[9];
 
     private KeyCode[] keycodes =
     {
@@ -32,43 +22,45 @@ public class InventoryController : MonoBehaviour
     };
     
     private bool[] weaponInventory;
-    private WeaponType currentWeapon;
-
+    private GameObject currentWeapon;
+    public Transform weaponPosition;
+    private GameObject parent;
     // Start is called before the first frame update
     void Start()
     {
-        weaponInventory = new bool[Enum.GetValues(typeof(WeaponType)).Length];
+        parent = GameObject.Find("First Person Camera");
+        weaponInventory = new bool[WeaponType.Length];
         
-        // Debug - give all weapons
-        for (int j = 0; j < weaponInventory.Length; j++)
+        //Debug - give all weapons
+        for(int x = 0;x<weaponInventory.Length;x++)
         {
-            weaponInventory[j] = true;
+            weaponInventory[x] = true;
         }
     }
 
-    public void SwitchWeapon(WeaponType weapon)
+    public void SwitchWeapon(GameObject weapon)
     {
-        if (weaponInventory[(int)weapon])
+        if (weaponInventory.Contains(weapon)) //Add check for same weapon later
         {
-            currentWeapon = weapon;
+            Destroy(currentWeapon);
+            currentWeapon = Instantiate<GameObject>(weapon, weaponPosition.position, weaponPosition.rotation, parent.transform);
         }
     }
 
-    public void AcquireWeapon(WeaponType weapon)
+    public void AcquireWeapon(GameObject weapon)
     {
-        weaponInventory[(int) weapon] = true;
+        weaponInventory[Array.IndexOf(WeaponType,weapon)] = true;
         SwitchWeapon(weapon);
     }
 
     // Update is called once per frame
     void Update()
     {
-        print(currentWeapon);
         for (int i = 0; i < keycodes.Length; i++)
         {
             if (Input.GetKeyDown(keycodes[i]))
             {
-                SwitchWeapon((WeaponType)i);
+                SwitchWeapon(WeaponType[i]);
                 break;
             }
         }

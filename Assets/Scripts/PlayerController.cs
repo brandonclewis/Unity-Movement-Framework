@@ -30,7 +30,8 @@ public class PlayerController : MonoBehaviour
     private bool isCrouching = false;
     private bool isGrounded;
     private bool groundTooSloped;
-    
+
+    private Rigidbody rb;
     private Animator animator;
     private CharacterController controller;
     private RaycastHit ground;
@@ -45,7 +46,9 @@ public class PlayerController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+
         controller = GetComponent<CharacterController>();
         animator = GetComponentInChildren<Animator>();
     }
@@ -91,11 +94,6 @@ public class PlayerController : MonoBehaviour
         if(groundTooSloped)
             velocitySum = Vector3.ProjectOnPlane(velocitySum, ground.normal);
         
-        // Smooth animation turn time and round to two digits
-        localVelocity = Vector3.SmoothDamp(localVelocity, transform.InverseTransformDirection(velocityHorizontal), ref localVelocityChange, animationSmoothTime);
-        animator.SetFloat("moveForward", Mathf.Round(localVelocity.z * 100f) / 100f);
-        animator.SetFloat("moveSideways", Mathf.Round(localVelocity.x * 100f) / 100f);
-
         // Move and rotate the player
         controller.Move(velocitySum * Time.deltaTime);
         transform.Rotate(CameraController.sensitivity * Input.GetAxisRaw("Mouse X") * Vector3.up,Space.Self);
