@@ -23,7 +23,6 @@ public class PlayerController : MonoBehaviour
     public float sprintSpeed = 6.096f; // Sprint speed cap w/o strafing
     public float walkSpeed = 2.8575f; // Walk speed cap w/o strafing
     public float jumpVelocity = 3.048f; // Initial upwards velocity added on jump
-    public float animationSmoothTime = 0.1f; // Smooth time for changing animator variables
     
     private bool isSprinting;
     private bool isWalking = true;
@@ -31,8 +30,6 @@ public class PlayerController : MonoBehaviour
     private bool isGrounded;
     private bool groundTooSloped;
 
-    private Rigidbody rb;
-    private Animator animator;
     private CharacterController controller;
     private RaycastHit ground;
 
@@ -50,7 +47,6 @@ public class PlayerController : MonoBehaviour
         Cursor.visible = false;
 
         controller = GetComponent<CharacterController>();
-        animator = GetComponentInChildren<Animator>();
     }
     
     // Update is called once per frame
