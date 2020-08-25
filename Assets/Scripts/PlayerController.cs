@@ -10,6 +10,7 @@ using Vector3 = UnityEngine.Vector3;
 
 public class PlayerController : MonoBehaviour
 {
+    [Header("Constants")]
     public float gravity = -9.81f; // Constant acceleration downwards
     public float terminalVelocity = -53f; // Maximum fall speed
     public float maxAcceleration = 8.5725f; // Maximum acceleration
@@ -24,21 +25,20 @@ public class PlayerController : MonoBehaviour
     public float walkSpeed = 2.8575f; // Walk speed cap w/o strafing
     public float jumpVelocity = 3.048f; // Initial upwards velocity added on jump
     
-    private bool isSprinting;
-    private bool isWalking = true;
-    private bool isCrouching = false;
-    private bool isGrounded;
-    private bool groundTooSloped;
-
+    [Header("Bools")]
+    public bool isSprinting;
+    public bool isWalking = true;
+    public bool isCrouching = false;
+    public bool isGrounded;
+    public bool groundTooSloped;
+    
     private CharacterController controller;
     private RaycastHit ground;
 
-    private float velocityVertical;
-    private Vector3 velocityHorizontal;
-    private Vector3 velHProj;
-    private Vector3 velocitySum;
-    private Vector3 localVelocity;
-    private Vector3 localVelocityChange;
+    [Header("Movement vectors")]
+    public float velocityVertical;
+    public Vector3 velocityHorizontal;
+    public Vector3 velocitySum;
 
     // Start is called before the first frame update
     void Start()
@@ -65,7 +65,7 @@ public class PlayerController : MonoBehaviour
 
         // Sprint and crouch logic
         isSprinting = Input.GetKey(KeyCode.LeftShift);
-        //isCrouching = Input.GetKey(KeyCode.LeftControl);
+        isCrouching = Input.GetKey(KeyCode.LeftControl);
 
         // Jump code
         if (isGrounded && !groundTooSloped && Input.GetAxisRaw("Jump") != 0f)
@@ -76,19 +76,20 @@ public class PlayerController : MonoBehaviour
         
         // Get horizontal velocity
         velocityHorizontal = CalculateVelocityHorizontal();
-
-        // Combine vertical and horizontal velocity
-        if (!groundTooSloped && !ground.Equals(default(RaycastHit)))
-        {
-            velocityVertical -= gravity * Time.deltaTime;
-            velHProj = Vector3.ProjectOnPlane(velocityHorizontal, ground.normal).normalized * velocityHorizontal.magnitude;
-            velocitySum = velHProj + Vector3.up * velocityVertical;
-        } else
-            velocitySum = velocityHorizontal + Vector3.up * velocityVertical;
         
-        // On ground sharper than the slope limit, project entire velocity onto surface normal
-        if(groundTooSloped)
-            velocitySum = Vector3.ProjectOnPlane(velocitySum, ground.normal);
+        // Combine vertical and horizontal velocity
+        if (!isGrounded)
+            velocitySum = velocityHorizontal + Vector3.up * velocityVertical;
+        else
+        {
+            if (groundTooSloped)
+                velocitySum = Vector3.ProjectOnPlane(velocityHorizontal + Vector3.up * velocityVertical, ground.normal);
+            else
+            {
+                velocityVertical -= gravity * Time.deltaTime;
+                velocitySum = Vector3.ProjectOnPlane(velocityHorizontal, ground.normal).normalized * velocityHorizontal.magnitude + Vector3.up * velocityVertical;
+            }
+        }
         
         // Move and rotate the player
         controller.Move(velocitySum * Time.deltaTime);
